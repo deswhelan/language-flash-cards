@@ -6,46 +6,37 @@ BACKGROUND_COLOR = "#B1DDC6"
 LANGUAGE_FONT = ("Arial", 20, "italic")
 WORD_FONT = ("Arial", 40, "bold")
 
+# ---------------------------- GAME LOGIC ------------------------------- #
 def get_translations_list():
+    """Returns a list of dictionaries representing french to english translations of commonly used french words"""
     # TODO: stretch - use irish words instead and/or allow user to choose/toggle language
     translations_df = pandas.read_csv("./data/french_words.csv")
     translations_list = translations_df.to_dict(orient="records")
 
     return translations_list
 
-def display_new_word():
-    global current_translation
-    # TODO: stretch - handle special characters
+def display_new_card():
+    """Displays (the front of) a new card featuring a french word chosen at random from those remaining in the translations list"""
     update_current_translation()
-    display_current_word()
+    canvas_card.itemconfig(image_card, image=CARD_FRONT_IMG)
+    canvas_card.itemconfig(text_current_language, text="french", fill="black")
+    canvas_card.itemconfig(text_current_word, fill="black")
+    display_current_word("French")
+    window.after(3000, flip_card)
 
-def display_current_word():
-    canvas_card.itemconfig(text_current_word, text=current_translation[current_language])
+def flip_card():
+    """Flips the current card over, revealing the english translation of the french word"""
+    canvas_card.itemconfig(image_card, image=CARD_BACK_IMG)
+    canvas_card.itemconfig(text_current_language, text="english", fill="white")
+    canvas_card.itemconfig(text_current_word, fill="white")
+    display_current_word("English")
+
+def display_current_word(language):
+    canvas_card.itemconfig(text_current_word, text=current_translation[language])
 
 def update_current_translation():
     global translations_list, current_translation
     current_translation = random.choice(translations_list)
-
-def flip_card():
-    global current_language
-
-    if current_language == "English":
-        update_current_translation()
-        display_current_word()
-        current_language = "French"
-        card_img = CARD_FRONT_IMG
-        text_colour = "black"
-    else:
-        current_language = "English"
-        card_img = CARD_BACK_IMG
-        text_colour = "white"
-
-    canvas_card.itemconfig(image_card, image=card_img)
-    canvas_card.itemconfig(text_current_language, text=current_language, fill=text_colour)
-    display_current_word()
-    canvas_card.itemconfig(text_current_word, fill=text_colour)
-
-    window.after(3000, flip_card)
 
 # TODO: stretch - implement using itertools
 # def toggle_language():
@@ -70,12 +61,13 @@ text_current_language = canvas_card.create_text(200, 50, text=current_language, 
 text_current_word = canvas_card.create_text(200, 125, text=current_translation[current_language], font=WORD_FONT)
 canvas_card.grid(column=1, row=1, columnspan=2, pady=(0, 50))
 
+# TODO: stretch - disable/hide buttons when front of card is displayed OR flip card if clicked when front is displayed
 CORRECT_IMG = PhotoImage(file="./images/right.png")
-button_correct = Button(image=CORRECT_IMG, command=display_current_word, highlightthickness=0, height=60, width=60)
+button_correct = Button(image=CORRECT_IMG, command=display_new_card, highlightthickness=0, height=60, width=60)
 button_correct.grid(column=1, row=2)
 
 INCORRECT_IMG = PhotoImage(file="./images/wrong.png")
-button_incorrect = Button(image=INCORRECT_IMG, command=flip_card, highlightthickness=0, height=60, width=60)
+button_incorrect = Button(image=INCORRECT_IMG, command=display_new_card, highlightthickness=0, height=60, width=60)
 button_incorrect.grid(column=2, row=2)
 
 window.after(3000, flip_card)
