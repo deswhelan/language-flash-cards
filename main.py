@@ -10,19 +10,26 @@ WORD_FONT = ("Arial", 40, "bold")
 def get_translations_list():
     """Returns a list of dictionaries representing french to english translations of commonly used french words"""
     # TODO: stretch - use irish words instead and/or allow user to choose/toggle language
-    translations_df = pandas.read_csv("./data/french_words.csv")
+    try:
+        translations_df = pandas.read_csv("./data/words_to_learn.csv")
+    except FileNotFoundError:
+        translations_df = pandas.read_csv("./data/french_words.csv")
+
     translations_list = translations_df.to_dict(orient="records")
 
     return translations_list
 
 def display_new_card():
-    """Displays (the front of) a new card featuring a french word chosen at random from those remaining in the translations list"""
+    """Displays (the front of) a new card featuring a french word"""
+    global timer
+    # cancel the pending flip if a new card is displayed during the countdown to a flip
+    window.after_cancel(timer)
     update_current_translation()
     canvas_card.itemconfig(image_card, image=CARD_FRONT_IMG)
     canvas_card.itemconfig(text_current_language, text="french", fill="black")
     canvas_card.itemconfig(text_current_word, fill="black")
     display_current_word("French")
-    window.after(3000, flip_card)
+    timer = window.after(3000, flip_card)
 
 def flip_card():
     """Flips the current card over, revealing the english translation of the french word"""
@@ -35,8 +42,18 @@ def display_current_word(language):
     canvas_card.itemconfig(text_current_word, text=current_translation[language])
 
 def update_current_translation():
+    """Sets current_translation to a dictionary chosen at random from those remaining in the translations list"""
     global translations_list, current_translation
     current_translation = random.choice(translations_list)
+
+def process_known_word():
+    """Prevents the card for this word from being presented again, then displays a new card"""
+    translations_list.remove(current_translation)
+
+    df = pandas.DataFrame(translations_list)
+    df.to_csv("./data/words_to_learn.csv")
+
+    display_new_card()
 
 # TODO: stretch - implement using itertools
 # def toggle_language():
@@ -63,13 +80,13 @@ canvas_card.grid(column=1, row=1, columnspan=2, pady=(0, 50))
 
 # TODO: stretch - disable/hide buttons when front of card is displayed OR flip card if clicked when front is displayed
 CORRECT_IMG = PhotoImage(file="./images/right.png")
-button_correct = Button(image=CORRECT_IMG, command=display_new_card, highlightthickness=0, height=60, width=60)
+button_correct = Button(image=CORRECT_IMG, command=process_known_word, highlightthickness=0, height=60, width=60)
 button_correct.grid(column=1, row=2)
 
 INCORRECT_IMG = PhotoImage(file="./images/wrong.png")
 button_incorrect = Button(image=INCORRECT_IMG, command=display_new_card, highlightthickness=0, height=60, width=60)
 button_incorrect.grid(column=2, row=2)
 
-window.after(3000, flip_card)
+timer = window.after(3000, flip_card)
 
 window.mainloop()
