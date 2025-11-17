@@ -51,7 +51,7 @@ def process_known_word():
     translations_list.remove(current_translation)
 
     df = pandas.DataFrame(translations_list)
-    df.to_csv("./data/words_to_learn.csv")
+    df.to_csv("./data/words_to_learn.csv", index=False)
 
     display_new_card()
 
